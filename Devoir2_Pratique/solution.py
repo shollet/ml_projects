@@ -135,7 +135,21 @@ class PracticalHomework2:
         - Returns a label array of shape (n_samples, num_classes) with -1 for non-class columns
           and 1 for the true class column.
         """
-        raise NotImplementedError
+
+        # Convert y to a NumPy array of integers if it's not already
+        y = np.asarray(y, dtype=int)
+
+        # Validate that y is a 1-dimensional array with valid class labels
+        if y.ndim != 1:
+            raise ValueError("Labels y must be a one-dimensional array.")
+        if not np.all((0 <= y) & (y < num_classes)):
+            raise ValueError(f"All labels must be between 0 and {num_classes - 1} inclusive.")
+
+        # Create the label matrix Y using broadcasting, aligning with the definition of t_i^j
+        # Y[i, j] = 1 if y[i] == j, else -1
+        Y = np.where(np.equal.outer(y, np.arange(num_classes)), 1, -1)
+
+        return Y
 
     def compute_loss(self, X, y, w, C):
         """
