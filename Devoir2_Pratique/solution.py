@@ -168,7 +168,29 @@ class PracticalHomework2:
         Output:
         - Returns the scalar loss value (float).
         """
-        raise NotImplementedError
+        
+        # Number of samples in the mini-batch
+        n_samples = X.shape[0]
+
+        # Compute the scores s_i^j = X_i · w^j for all examples and classes
+        scores = X @ w  # Shape: (n_samples, num_classes)
+
+        # Compute z_i^j = 2 - t_i^j * s_i^j
+        z = 2 - y * scores  # Shape: (n_samples, num_classes)
+
+        # Compute the hinge loss component: (max(0, z_i^j))^2
+        hinge_losses = np.maximum(0, z) ** 2  # Shape: (n_samples, num_classes)
+
+        # Compute the mean hinge loss over the mini-batch
+        loss_hinge = np.sum(hinge_losses) / n_samples
+
+        # Compute the L2 regularization term: (C / 2) * ||w||^2
+        loss_reg = (C / 2) * np.sum(w ** 2)
+
+        # Total loss is the sum of hinge loss and regularization loss
+        loss = loss_hinge + loss_reg
+
+        return loss
 
     def compute_gradient(self, X, y, w, C):
         """
