@@ -351,4 +351,21 @@ class PracticalHomework2:
         Output:
         - Returns the accuracy score (float) as a percentage of correct predictions.
         """
-        raise NotImplementedError
+
+        # Predict the labels in one-vs-all format
+        y_inferred = self.infer(X, w)  # Shape: (n_samples, num_classes)
+
+        # Convert true labels to one-vs-all format
+        num_classes = w.shape[1]
+        y_true_ova = self.make_one_versus_all_labels(y, num_classes)  # Shape: (n_samples, num_classes)
+
+        # Extract the predicted class indices from y_inferred
+        predicted_classes = np.argmax(y_inferred, axis=1)
+
+        # Extract the true class indices from y_true_ova
+        true_classes = np.argmax(y_true_ova, axis=1)
+
+        # Compute the proportion of correct predictions
+        accuracy = np.mean(predicted_classes == true_classes)
+
+        return accuracy
