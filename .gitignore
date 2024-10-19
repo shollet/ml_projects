@@ -1,3 +1,8 @@
-# npy files
+// Kaggle files
 *.npy
 classer-le-text
+
+// Devoir2_Pratique files
+test*.csv
+train*.csv
+val*.csv
