@@ -257,13 +257,11 @@ class PracticalHomework2:
         # Determine the predicted class indices by finding the argmax of the scores
         predicted_classes = np.argmax(scores, axis=1)  # Shape: (n_samples,)
 
-        # Convert the predicted class indices into the one-vs-all format
-        # Initialize the label matrix with -1
-        n_samples, num_classes = scores.shape
-        y_inferred = -1 * np.ones((n_samples, num_classes), dtype=int)
+        # Get the number of classes
+        num_classes = w.shape[1]
 
-        # Set +1 for the predicted class in each example
-        y_inferred[np.arange(n_samples), predicted_classes] = 1
+        # Convert the predicted class indices into the one-vs-all format
+        y_inferred = self.make_one_versus_all_labels(predicted_classes, num_classes) # Shape: (n_samples, num_classes)
 
         return y_inferred
 
