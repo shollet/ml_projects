@@ -218,7 +218,7 @@ class PracticalHomework2:
         z = 2 - y * scores  # Shape: (n_samples, num_classes)
 
         # Compute the indicator function I_{ z_i^j > 0 }
-        indicator = (z > 0).astype(float)  # Shape: (n_samples, num_classes)
+        indicator = (z > 0)  # Shape: (n_samples, num_classes)
 
         # Compute the gradient of the hinge loss
         # temp = (2 - t_i^j s_i^j) * t_i^j * indicator = z_i^j * t_i^j * indicator
