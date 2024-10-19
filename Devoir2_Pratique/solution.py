@@ -168,7 +168,7 @@ class PracticalHomework2:
         Output:
         - Returns the scalar loss value (float).
         """
-        
+
         # Number of samples in the mini-batch
         n_samples = X.shape[0]
 
@@ -209,7 +209,31 @@ class PracticalHomework2:
         Output:
         - Returns the gradient matrix of shape (n_features, n_classes).
         """
-        raise NotImplementedError
+        n_samples = X.shape[0]
+
+        # Compute the scores s_i^j = X_i · w^j for all examples and classes
+        scores = X @ w  # Shape: (n_samples, num_classes)
+
+        # Compute z_i^j = 2 - t_i^j * s_i^j
+        z = 2 - y * scores  # Shape: (n_samples, num_classes)
+
+        # Compute the indicator function I_{ z_i^j > 0 }
+        indicator = (z > 0).astype(float)  # Shape: (n_samples, num_classes)
+
+        # Compute the gradient of the hinge loss
+        # temp = (2 - t_i^j s_i^j) * t_i^j * indicator = z_i^j * t_i^j * indicator
+        temp = z * y * indicator  # Shape: (n_samples, num_classes)
+
+        # Compute the gradient of the hinge loss component
+        grad_hinge = (-2 / n_samples) * X.T @ temp  # Shape: (n_features, num_classes)
+
+        # Compute the gradient of the regularization term
+        grad_reg = C * w  # Shape: (n_features, num_classes)
+
+        # Total gradient is the sum of the hinge loss gradient and the regularization gradient
+        grad = grad_hinge + grad_reg
+
+        return grad
 
     def infer(self, X, w):
         """
