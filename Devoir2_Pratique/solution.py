@@ -250,7 +250,22 @@ class PracticalHomework2:
         Output:
         - Returns an array of predicted class labels of shape (n_samples,).
         """
-        raise NotImplementedError
+        
+        # Compute the scores for each class
+        scores = X @ w  # Shape: (n_samples, n_classes)
+
+        # Determine the predicted class indices by finding the argmax of the scores
+        predicted_classes = np.argmax(scores, axis=1)  # Shape: (n_samples,)
+
+        # Convert the predicted class indices into the one-vs-all format
+        # Initialize the label matrix with -1
+        n_samples, num_classes = scores.shape
+        y_inferred = -1 * np.ones((n_samples, num_classes), dtype=int)
+
+        # Set +1 for the predicted class in each example
+        y_inferred[np.arange(n_samples), predicted_classes] = 1
+
+        return y_inferred
 
     def fit(
         self, X_train, y_train, X_val, y_val,
