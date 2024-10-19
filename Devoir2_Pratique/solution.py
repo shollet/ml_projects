@@ -367,3 +367,142 @@ class PracticalHomework2:
         accuracy = np.mean(predicted_classes == true_classes)
 
         return accuracy
+
+def main():
+    # Instantiate the class
+    phw2 = PracticalHomework2()
+
+    # Generate data (if not already generated)
+    # Uncomment the following line if you haven't generated the data yet
+    # phw2.generate_data(seed=42)
+
+    # Load and preprocess data
+    X_train, y_train, X_val, y_val, X_test, y_test = phw2.load_and_preprocess_data()
+
+    num_classes = 3
+    epochs = 200
+    learning_rate = 0.0001
+    batch_size = 100
+
+    Cs = [1, 5, 10]  # Different values of the regularization parameter C
+
+    # Dictionary to store history for each value of C
+    histories = {}
+
+    for C in Cs:
+        print(f"\nTraining with C = {C}")
+        
+        # Since we cannot modify the 'fit' method, we'll extend the class to store the history
+        class PracticalHomework2WithHistory(PracticalHomework2):
+            def __init__(self):
+                super().__init__()
+                self.history = {
+                    'train_loss': [],
+                    'val_loss': [],
+                    'train_acc': [],
+                    'val_acc': []
+                }
+
+            def fit(
+                self, X_train, y_train, X_val, y_val,
+                num_classes, epochs,
+                learning_rate, C, batch_size
+            ):
+                num_features = X_train.shape[1]
+                w = np.zeros((num_features, num_classes))
+                
+                for epoch in range(epochs):
+                    indices = np.arange(X_train.shape[0])
+                    np.random.shuffle(indices)
+                    
+                    # Mini-batch training
+                    for i in range(0, X_train.shape[0], batch_size):
+                        batch_indices = indices[i:i+batch_size]
+                        X_batch = X_train[batch_indices]
+                        y_batch = self.make_one_versus_all_labels(y_train[batch_indices], num_classes)
+                        
+                        # Compute gradients and update weights
+                        grad = self.compute_gradient(X_batch, y_batch, w, C)
+                        w -= learning_rate * grad
+                    
+                    # Compute training and validation loss and accuracy
+                    train_loss = self.compute_loss(X_train, self.make_one_versus_all_labels(y_train, num_classes), w, C)
+                    val_loss = self.compute_loss(X_val, self.make_one_versus_all_labels(y_val, num_classes), w, C)
+                    train_acc = self.compute_accuracy(X_train, y_train, w)
+                    val_acc = self.compute_accuracy(X_val, y_val, w)
+                
+                    # Store the metrics
+                    self.history['train_loss'].append(train_loss)
+                    self.history['val_loss'].append(val_loss)
+                    self.history['train_acc'].append(train_acc)
+                    self.history['val_acc'].append(val_acc)
+                    
+                    print(f"Epoch {epoch+1}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, "
+                          f"Train Acc = {train_acc:.4f}, Val Acc = {val_acc:.4f}")
+                
+                self.w = w  # Save the weights for later use
+
+        # Create an instance of the subclass
+        phw2_with_history = PracticalHomework2WithHistory()
+        
+        # Train the model
+        phw2_with_history.fit(
+            X_train, y_train, X_val, y_val,
+            num_classes, epochs,
+            learning_rate, C, batch_size
+        )
+
+        # Store the history
+        histories[C] = phw2_with_history.history
+
+    def plot_graphs(histories, epochs, Cs):
+        epochs_range = range(1, epochs+1)
+
+        # Plot training loss
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['train_loss'], label=f'C={C}')
+        plt.title('Training Loss vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Training Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot validation loss
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['val_loss'], label=f'C={C}')
+        plt.title('Validation Loss vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Validation Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot training accuracy
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['train_acc'], label=f'C={C}')
+        plt.title('Training Accuracy vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Training Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot validation accuracy
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['val_acc'], label=f'C={C}')
+        plt.title('Validation Accuracy vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Validation Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    plot_graphs(histories, epochs, Cs)
+
+if __name__ == '__main__':
+    main()
