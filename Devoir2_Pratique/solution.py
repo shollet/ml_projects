@@ -257,13 +257,8 @@ class PracticalHomework2:
         # Determine the predicted class indices by finding the argmax of the scores
         predicted_classes = np.argmax(scores, axis=1)  # Shape: (n_samples,)
 
-        # Get the number of classes
-        num_classes = w.shape[1]
-
-        # Convert the predicted class indices into the one-vs-all format
-        y_inferred = self.make_one_versus_all_labels(predicted_classes, num_classes) # Shape: (n_samples, num_classes)
-
-        return y_inferred
+        # Return the predicted class indices (integers between 0 and num_classes-1)
+        return predicted_classes
 
     def fit(
         self, X_train, y_train, X_val, y_val,
@@ -332,6 +327,8 @@ class PracticalHomework2:
             history['val_acc'].append(val_acc)
             
             print(f"Epoch {epoch+1}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Train Acc = {train_acc:.4f}, Val Acc = {val_acc:.4f}")
+        
+        return w, history  # Return weights and history
     
     def compute_accuracy(self, X, y, w):
         """
@@ -350,21 +347,11 @@ class PracticalHomework2:
         - Returns the accuracy score (float) as a percentage of correct predictions.
         """
 
-        # Predict the labels in one-vs-all format
-        y_inferred = self.infer(X, w)  # Shape: (n_samples, num_classes)
-
-        # Convert true labels to one-vs-all format
-        num_classes = w.shape[1]
-        y_true_ova = self.make_one_versus_all_labels(y, num_classes)  # Shape: (n_samples, num_classes)
-
-        # Extract the predicted class indices from y_inferred
-        predicted_classes = np.argmax(y_inferred, axis=1)
-
-        # Extract the true class indices from y_true_ova
-        true_classes = np.argmax(y_true_ova, axis=1)
+        # Predict the labels
+        predicted_classes = self.infer(X, w) # Shape: (n_samples,)
 
         # Compute the proportion of correct predictions
-        accuracy = np.mean(predicted_classes == true_classes)
+        accuracy = np.mean(predicted_classes == y) 
 
         return accuracy
 
@@ -392,68 +379,11 @@ def main():
     for C in Cs:
         print(f"\nTraining with C = {C}")
         
-        # Since we cannot modify the 'fit' method, we'll extend the class to store the history
-        class PracticalHomework2WithHistory(PracticalHomework2):
-            def __init__(self):
-                super().__init__()
-                self.history = {
-                    'train_loss': [],
-                    'val_loss': [],
-                    'train_acc': [],
-                    'val_acc': []
-                }
-
-            def fit(
-                self, X_train, y_train, X_val, y_val,
-                num_classes, epochs,
-                learning_rate, C, batch_size
-            ):
-                num_features = X_train.shape[1]
-                w = np.zeros((num_features, num_classes))
-                
-                for epoch in range(epochs):
-                    indices = np.arange(X_train.shape[0])
-                    np.random.shuffle(indices)
-                    
-                    # Mini-batch training
-                    for i in range(0, X_train.shape[0], batch_size):
-                        batch_indices = indices[i:i+batch_size]
-                        X_batch = X_train[batch_indices]
-                        y_batch = self.make_one_versus_all_labels(y_train[batch_indices], num_classes)
-                        
-                        # Compute gradients and update weights
-                        grad = self.compute_gradient(X_batch, y_batch, w, C)
-                        w -= learning_rate * grad
-                    
-                    # Compute training and validation loss and accuracy
-                    train_loss = self.compute_loss(X_train, self.make_one_versus_all_labels(y_train, num_classes), w, C)
-                    val_loss = self.compute_loss(X_val, self.make_one_versus_all_labels(y_val, num_classes), w, C)
-                    train_acc = self.compute_accuracy(X_train, y_train, w)
-                    val_acc = self.compute_accuracy(X_val, y_val, w)
-                
-                    # Store the metrics
-                    self.history['train_loss'].append(train_loss)
-                    self.history['val_loss'].append(val_loss)
-                    self.history['train_acc'].append(train_acc)
-                    self.history['val_acc'].append(val_acc)
-                    
-                    print(f"Epoch {epoch+1}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, "
-                          f"Train Acc = {train_acc:.4f}, Val Acc = {val_acc:.4f}")
-                
-                self.w = w  # Save the weights for later use
-
-        # Create an instance of the subclass
-        phw2_with_history = PracticalHomework2WithHistory()
-        
-        # Train the model
-        phw2_with_history.fit(
-            X_train, y_train, X_val, y_val,
-            num_classes, epochs,
-            learning_rate, C, batch_size
-        )
+        # Train the model and get weights and history
+        w, history = phw2.fit(X_train, y_train, X_val, y_val, num_classes, epochs, learning_rate, C, batch_size)
 
         # Store the history
-        histories[C] = phw2_with_history.history
+        histories[C] = history
 
     def plot_graphs(histories, epochs, Cs):
         epochs_range = range(1, epochs+1)
