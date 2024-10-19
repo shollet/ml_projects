@@ -26,6 +26,11 @@ Dans ce dossier, vous trouverez la solution au Devoir 2 pratique, qui inclut :
 - **`solution.py`** : Le fichier contenant l'implémentation complète de la solution.
 - **`rapport_pratique.pdf`** : Le rapport décrivant l'approche, la méthodologie et les résultats.
 
+Dans le cadre de l'entraînement du SVM un-contre-tous avec pénalité L2, Les principales sections abordées incluent :
+- Calcul du gradient pour le hinge loss.
+- Implémentation des méthodes de régularisation.
+- Analyse des graphiques d'évolution de la perte et de l'exactitude.
+
 ### Compétition Kaggle
 La section Kaggle contient le code nécessaire pour entraîner un modèle de régression logistique sur un ensemble de données réel. Ce projet inclut :
 - **`test.py`** : Le script principal pour charger les données, entraîner le modèle, et faire les prédictions finales.
@@ -47,11 +52,11 @@ Pour exécuter le projet, suivez les étapes ci-dessous :
 
 3. Installez les dépendances :
    ```bash
-   pip install numpy pandas
+   pip install numpy pandas matplotlib
    ```
 
 4. Organisez les données dans le dossier approprié :
-   - Placez les fichiers d'entraînement, de test, et le vocabulaire dans le dossier `classer-le-text/`.
+   - Placez les fichiers d'entraînement, de validation, et de test dans le dossier `Data_classification/`.
 
 ## Utilisation
 
@@ -66,9 +71,19 @@ Pour exécuter le projet, suivez les étapes ci-dessous :
    - Entraîner la régression logistique et ajuster les hyperparamètres via une recherche par grille.
    - Sauvegarder les prédictions dans `predictions.csv`.
 
+### Exécution du projet pour le Devoir 2 Pratique :
+1. Pour exécuter l'entraînement du SVM un-contre-tous, lancez le script `solution.py` :
+   ```bash
+   python solution.py
+   ```
+2. Les résultats incluent des graphiques pour :
+   - **Perte d'entraînement** et **perte de validation**.
+   - **Exactitude d'entraînement** et **exactitude de validation**.
+3. Ces graphiques sont stockés dans le dossier spécifié par le script, et les résultats sont détaillés dans le rapport pratique en PDF.
+
 ### Détails des fichiers :
 - **`test.py`** : Entraîne le modèle et fait les prédictions pour la compétition Kaggle.
-- **`solution.py`** : Implémentation pratique pour le devoir 2.
+- **`solution.py`** : Implémentation pratique pour le devoir 2, incluant la création des graphiques d'entraînement et de validation.
 - **`rapport_pratique.pdf`** : Rapport pour la partie pratique du devoir.
 - **`predictions.csv`** : Résultats des prédictions sur l'ensemble de test Kaggle.
 
@@ -82,4 +97,4 @@ Détails de la compétition Kaggle à venir.
 ## Contact
 Pour toute question, vous pouvez me contacter via :
 - Email : [shayan.nicolas.hollet@umontreal.ca](mailto:shayan.nicolas.hollet@umontreal.ca)
-- GitHub : [shollet](https://github.com/sholllet)
+- GitHub : [shollet](https://github.com/shollet)
