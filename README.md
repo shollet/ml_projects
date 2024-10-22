@@ -24,7 +24,7 @@ Ce dossier contient l'analyse théorique du Devoir 2, avec tous les détails dan
 ### Devoir 2 Pratique
 Dans ce dossier, vous trouverez la solution au Devoir 2 pratique, qui inclut :
 - **`solution.py`** : Le fichier contenant l'implémentation complète de la solution.
-- **`rapport_pratique.pdf`** : Le rapport décrivant l'approche, la méthodologie et les résultats.
+- **`Devoir 2 - Pratique - Rapport - 3395.pdf`** : Le rapport décrivant l'approche, la méthodologie et les résultats.
 
 Dans le cadre de l'entraînement du SVM un-contre-tous avec pénalité L2, Les principales sections abordées incluent :
 - Calcul du gradient pour le hinge loss.
@@ -84,7 +84,7 @@ Pour exécuter le projet, suivez les étapes ci-dessous :
 ### Détails des fichiers :
 - **`test.py`** : Entraîne le modèle et fait les prédictions pour la compétition Kaggle.
 - **`solution.py`** : Implémentation pratique pour le devoir 2, incluant la création des graphiques d'entraînement et de validation.
-- **`rapport_pratique.pdf`** : Rapport pour la partie pratique du devoir.
+- **`Devoir 2 - Pratique - Rapport - 3395.pdf`** : Rapport pour la partie pratique du devoir.
 - **`predictions.csv`** : Résultats des prédictions sur l'ensemble de test Kaggle.
 
 ## Lien Overleaf
