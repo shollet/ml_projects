@@ -1,3 +1,6 @@
+# Shayan Nicolas Hollet (Matricule: 20146766)
+# Byungsuk Min (Matricule: 20234231)
+
 #!/usr/bin/env python
 # coding: utf-8
 
