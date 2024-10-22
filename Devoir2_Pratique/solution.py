@@ -1,3 +1,6 @@
+# Shayan Nicolas Hollet (Matricule: 20146766)
+# Byungsuk Min (Matricule: 20234231)
+
 #!/usr/bin/env python
 # coding: utf-8
 
@@ -135,7 +138,21 @@ class PracticalHomework2:
         - Returns a label array of shape (n_samples, num_classes) with -1 for non-class columns
           and 1 for the true class column.
         """
-        raise NotImplementedError
+
+        # Convert y to a NumPy array of integers if it's not already
+        y = np.asarray(y, dtype=int)
+
+        # Validate that y is a 1-dimensional array with valid class labels
+        if y.ndim != 1:
+            raise ValueError("Labels y must be a one-dimensional array.")
+        if not np.all((0 <= y) & (y < num_classes)):
+            raise ValueError(f"All labels must be between 0 and {num_classes - 1} inclusive.")
+
+        # Create the label matrix Y using broadcasting, aligning with the definition of t_i^j
+        # Y[i, j] = 1 if y[i] == j, else -1
+        Y = np.where(np.equal.outer(y, np.arange(num_classes)), 1, -1)
+
+        return Y
 
     def compute_loss(self, X, y, w, C):
         """
@@ -154,7 +171,29 @@ class PracticalHomework2:
         Output:
         - Returns the scalar loss value (float).
         """
-        raise NotImplementedError
+
+        # Number of samples in the mini-batch
+        n_samples = X.shape[0]
+
+        # Compute the scores s_i^j = X_i · w^j for all examples and classes
+        scores = X @ w  # Shape: (n_samples, num_classes)
+
+        # Compute z_i^j = 2 - t_i^j * s_i^j
+        z = 2 - y * scores  # Shape: (n_samples, num_classes)
+
+        # Compute the hinge loss component: (max(0, z_i^j))^2
+        hinge_losses = np.maximum(0, z) ** 2  # Shape: (n_samples, num_classes)
+
+        # Compute the mean hinge loss over the mini-batch
+        loss_hinge = np.mean(hinge_losses)
+
+        # Compute the L2 regularization term: (C / 2) * ||w||^2
+        loss_reg = (C / 2) * np.sum(w ** 2)
+
+        # Total loss is the sum of hinge loss and regularization loss
+        loss = loss_hinge + loss_reg
+
+        return loss
 
     def compute_gradient(self, X, y, w, C):
         """
@@ -173,7 +212,31 @@ class PracticalHomework2:
         Output:
         - Returns the gradient matrix of shape (n_features, n_classes).
         """
-        raise NotImplementedError
+        n_samples = X.shape[0]
+
+        # Compute the scores s_i^j = X_i · w^j for all examples and classes
+        scores = X @ w  # Shape: (n_samples, num_classes)
+
+        # Compute z_i^j = 2 - t_i^j * s_i^j
+        z = 2 - y * scores  # Shape: (n_samples, num_classes)
+
+        # Compute the indicator function I_{ z_i^j > 0 }
+        indicator = (z > 0)  # Shape: (n_samples, num_classes)
+
+        # Compute the gradient of the hinge loss
+        # temp = (2 - t_i^j s_i^j) * t_i^j * indicator = z_i^j * t_i^j * indicator
+        temp = z * y * indicator  # Shape: (n_samples, num_classes)
+
+        # Compute the gradient of the hinge loss component
+        grad_hinge = (-2 / n_samples) * X.T @ temp  # Shape: (n_features, num_classes)
+
+        # Compute the gradient of the regularization term
+        grad_reg = C * w  # Shape: (n_features, num_classes)
+
+        # Total gradient is the sum of the hinge loss gradient and the regularization gradient
+        grad = grad_hinge + grad_reg
+
+        return grad
 
     def infer(self, X, w):
         """
@@ -190,7 +253,15 @@ class PracticalHomework2:
         Output:
         - Returns an array of predicted class labels of shape (n_samples,).
         """
-        raise NotImplementedError
+        
+        # Compute the scores for each class
+        scores = X @ w  # Shape: (n_samples, n_classes)
+
+        # Determine the predicted class indices by finding the argmax of the scores
+        predicted_classes = np.argmax(scores, axis=1)  # Shape: (n_samples,)
+
+        # Return the predicted class indices (integers between 0 and num_classes-1)
+        return predicted_classes
 
     def fit(
         self, X_train, y_train, X_val, y_val,
@@ -259,6 +330,8 @@ class PracticalHomework2:
             history['val_acc'].append(val_acc)
             
             print(f"Epoch {epoch+1}: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}, Train Acc = {train_acc:.4f}, Val Acc = {val_acc:.4f}")
+        
+        return w, history  # Return weights and history
     
     def compute_accuracy(self, X, y, w):
         """
@@ -276,4 +349,93 @@ class PracticalHomework2:
         Output:
         - Returns the accuracy score (float) as a percentage of correct predictions.
         """
-        raise NotImplementedError
+
+        # Predict the labels
+        predicted_classes = self.infer(X, w) # Shape: (n_samples,)
+
+        # Compute the proportion of correct predictions
+        accuracy = np.mean(predicted_classes == y) 
+
+        return accuracy
+
+def main():
+    # Instantiate the class
+    phw2 = PracticalHomework2()
+
+    # Generate data (if not already generated)
+    # Uncomment the following line if you haven't generated the data yet
+    # phw2.generate_data(seed=42)
+
+    # Load and preprocess data
+    X_train, y_train, X_val, y_val, X_test, y_test = phw2.load_and_preprocess_data()
+
+    num_classes = 3
+    epochs = 200
+    learning_rate = 0.0001
+    batch_size = 100
+
+    Cs = [1, 5, 10]  # Different values of the regularization parameter C
+
+    # Dictionary to store history for each value of C
+    histories = {}
+
+    for C in Cs:
+        print(f"\nTraining with C = {C}")
+        
+        # Train the model and get weights and history
+        w, history = phw2.fit(X_train, y_train, X_val, y_val, num_classes, epochs, learning_rate, C, batch_size)
+
+        # Store the history
+        histories[C] = history
+
+    def plot_graphs(histories, epochs, Cs):
+        epochs_range = range(1, epochs+1)
+
+        # Plot training loss
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['train_loss'], label=f'C={C}')
+        plt.title('Training Loss vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Training Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot validation loss
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['val_loss'], label=f'C={C}')
+        plt.title('Validation Loss vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Validation Loss')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot training accuracy
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['train_acc'], label=f'C={C}')
+        plt.title('Training Accuracy vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Training Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        # Plot validation accuracy
+        plt.figure(figsize=(10, 6))
+        for C in Cs:
+            plt.plot(epochs_range, histories[C]['val_acc'], label=f'C={C}')
+        plt.title('Validation Accuracy vs Epochs')
+        plt.xlabel('Epochs')
+        plt.ylabel('Validation Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    plot_graphs(histories, epochs, Cs)
+
+if __name__ == '__main__':
+    main()
