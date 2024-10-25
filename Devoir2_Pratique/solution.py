@@ -185,7 +185,7 @@ class PracticalHomework2:
         hinge_losses = np.maximum(0, z) ** 2  # Shape: (n_samples, num_classes)
 
         # Compute the mean hinge loss over the mini-batch
-        loss_hinge = np.mean(hinge_losses)
+        loss_hinge = np.sum(hinge_losses) / n_samples
 
         # Compute the L2 regularization term: (C / 2) * ||w||^2
         loss_reg = (C / 2) * np.sum(w ** 2)
