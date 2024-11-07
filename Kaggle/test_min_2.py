@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import RidgeClassifier
 from sklearn.metrics import f1_score
-from xgboost import XGBClassifier
 import os
 
 # Classe pour charger et prétraiter les données
@@ -46,7 +46,7 @@ class DataLoader:
         print(f"Transformed X shape: {self.X.shape}")
         print(f"Transformed X_test shape: {self.X_test.shape}")
 
-# Classe pour entraîner et valider le modèle XGBoost avec validation croisée
+# Classe pour entraîner et valider le modèle Ridge Classifier avec validation croisée
 class KFoldModelTrainer:
     def __init__(self, model, n_splits=5):
         self.model = model
@@ -90,12 +90,9 @@ if __name__ == "__main__":
     data_loader.load_data()
     data_loader.preprocess_data()
 
-    # Calculer le ratio des classes pour l'équilibrage
-    class_ratio = sum(data_loader.y == 0) / sum(data_loader.y == 1)
-
-    # Initialiser le modèle XGBoost
-    xgb_model = XGBClassifier(scale_pos_weight=class_ratio, use_label_encoder=False, eval_metric='logloss')
-    trainer = KFoldModelTrainer(xgb_model, n_splits=10)
+    # Initialiser le modèle Ridge Classifier avec balance des classes
+    ridge_model = RidgeClassifier(class_weight='balanced')
+    trainer = KFoldModelTrainer(ridge_model, n_splits=10)
 
     # Entraîner et valider le modèle
     mean_f1_score = trainer.cross_validate(data_loader.X, data_loader.y)
@@ -108,6 +105,6 @@ if __name__ == "__main__":
         'ID': np.arange(len(y_test_pred)),
         'label': y_test_pred
     })
-    predictions_df.to_csv('xgb_predictions.csv', index=False)
+    predictions_df.to_csv('ridge_predictions.csv', index=False)
 
-    print("Predictions saved to 'xgb_predictions.csv'.")
+    print("Predictions saved to 'ridge_predictions.csv'.")
