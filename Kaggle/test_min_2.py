@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
 import os
 
@@ -46,7 +46,7 @@ class DataLoader:
         print(f"Transformed X shape: {self.X.shape}")
         print(f"Transformed X_test shape: {self.X_test.shape}")
 
-# Classe pour entraîner et valider le modèle SVM avec validation croisée
+# Classe pour entraîner et valider le modèle Random Forest avec validation croisée
 class KFoldModelTrainer:
     def __init__(self, model, n_splits=5):
         self.model = model
@@ -90,9 +90,9 @@ if __name__ == "__main__":
     data_loader.load_data()
     data_loader.preprocess_data()
 
-    # Initialiser le modèle SVM linéaire avec balance des classes
-    svm_model = LinearSVC(class_weight='balanced', max_iter=5000)
-    trainer = KFoldModelTrainer(svm_model, n_splits=10)
+    # Initialiser le modèle Random Forest avec balance des classes
+    rf_model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
+    trainer = KFoldModelTrainer(rf_model, n_splits=10)
 
     # Entraîner et valider le modèle
     mean_f1_score = trainer.cross_validate(data_loader.X, data_loader.y)
@@ -105,6 +105,6 @@ if __name__ == "__main__":
         'ID': np.arange(len(y_test_pred)),
         'label': y_test_pred
     })
-    predictions_df.to_csv('svm_predictions.csv', index=False)
+    predictions_df.to_csv('rf_predictions.csv', index=False)
 
-    print("Predictions saved to 'svm_predictions.csv'.")
+    print("Predictions saved to 'rf_predictions.csv'.")
