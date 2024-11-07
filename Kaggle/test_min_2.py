@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
 from sklearn.metrics import f1_score
 import os
 
+# Classe pour charger et prétraiter les données
 class DataLoader:
     def __init__(self, data_folder):
         self.data_folder = data_folder
@@ -36,8 +37,8 @@ class DataLoader:
         self.X = [' '.join(map(str, row)) for row in self.X]
         self.X_test = [' '.join(map(str, row)) for row in self.X_test]
 
-        # Initialiser le vectoriseur TF-IDF avec suppression des stop words
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)  # Limite de features pour éviter les surajustements
+        # Initialiser le vectoriseur TF-IDF
+        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
         self.X = vectorizer.fit_transform(self.X)
         self.X_test = vectorizer.transform(self.X_test)
 
@@ -45,9 +46,10 @@ class DataLoader:
         print(f"Transformed X shape: {self.X.shape}")
         print(f"Transformed X_test shape: {self.X_test.shape}")
 
-class NaiveBayesKFold:
-    def __init__(self, n_splits=5):
-        self.model = MultinomialNB()
+# Classe pour entraîner et valider le modèle SVM avec validation croisée
+class KFoldModelTrainer:
+    def __init__(self, model, n_splits=5):
+        self.model = model
         self.n_splits = n_splits
         self.scores = []
 
@@ -60,10 +62,10 @@ class NaiveBayesKFold:
             X_train, X_val = X[train_index], X[val_index]
             y_train, y_val = y[train_index], y[val_index]
 
-            # Entraînement
+            # Entraînement du modèle sur les données d'entraînement
             self.model.fit(X_train, y_train)
 
-            # Prédictions et score
+            # Prédictions et calcul du score F1 sur les données de validation
             y_pred = self.model.predict(X_val)
             score = f1_score(y_val, y_pred, average='macro')
             self.scores.append(score)
@@ -77,30 +79,32 @@ class NaiveBayesKFold:
         return mean_score
 
     def predict(self, X):
-        """Predict using the fitted model after cross-validation."""
+        """Prédictions sur les nouvelles données après validation croisée."""
         return self.model.predict(X)
 
 if __name__ == "__main__":
-    # Initialize data loader
+    # Initialiser le chargeur de données
     data_loader = DataLoader(data_folder='Kaggle')
 
-    # Load and preprocess data
+    # Charger et prétraiter les données
     data_loader.load_data()
     data_loader.preprocess_data()
 
-    # Initialize and run k-fold cross-validation
-    model = NaiveBayesKFold(n_splits=10)
-    mean_f1_score = model.cross_validate(data_loader.X, data_loader.y)
+    # Initialiser le modèle SVM linéaire avec balance des classes
+    svm_model = LinearSVC(class_weight='balanced', max_iter=5000)
+    trainer = KFoldModelTrainer(svm_model, n_splits=10)
 
-    # Make predictions on the test set after cross-validation
-    y_test_pred = model.predict(data_loader.X_test)
+    # Entraîner et valider le modèle
+    mean_f1_score = trainer.cross_validate(data_loader.X, data_loader.y)
 
-    # Save predictions to CSV
-    test_ids = np.arange(data_loader.X_test.shape[0])
+    # Prédictions finales sur l'ensemble de test
+    y_test_pred = trainer.predict(data_loader.X_test)
+
+    # Sauvegarder les prédictions dans un fichier CSV
     predictions_df = pd.DataFrame({
-        'ID': test_ids,
+        'ID': np.arange(len(y_test_pred)),
         'label': y_test_pred
     })
-    predictions_df.to_csv('predictions.csv', index=False)
+    predictions_df.to_csv('svm_predictions.csv', index=False)
 
-    print("Predictions saved to 'predictions.csv'.")
+    print("Predictions saved to 'svm_predictions.csv'.")
