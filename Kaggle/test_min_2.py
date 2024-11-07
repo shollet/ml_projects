@@ -1,9 +1,16 @@
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import RidgeClassifier
+from sklearn.preprocessing import Normalizer
+from sklearn.decomposition import TruncatedSVD
 from sklearn.metrics import f1_score
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
 import os
 
 # Classe pour charger et prétraiter les données
@@ -34,77 +41,97 @@ class DataLoader:
 
     def preprocess_data(self):
         # Convertir les données en format texte pour le vecteur TF-IDF
-        self.X = [' '.join(map(str, row)) for row in self.X]
-        self.X_test = [' '.join(map(str, row)) for row in self.X_test]
+        X_text = [' '.join(map(str, row)) for row in self.X]
+        X_test_text = [' '.join(map(str, row)) for row in self.X_test]
 
         # Initialiser le vectoriseur TF-IDF
         vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-        self.X = vectorizer.fit_transform(self.X)
-        self.X_test = vectorizer.transform(self.X_test)
+        self.X = vectorizer.fit_transform(X_text)
+        self.X_test = vectorizer.transform(X_test_text)
 
-        print("TF-IDF transformation complete.")
-        print(f"Transformed X shape: {self.X.shape}")
-        print(f"Transformed X_test shape: {self.X_test.shape}")
+        # Calculer des caractéristiques supplémentaires pour l'ensemble d'entraînement
+        text_lengths_train = np.array(self.X.sum(axis=1)).flatten()  # Somme des poids TF-IDF pour chaque document
+        unique_words_train = np.array((self.X > 0).sum(axis=1)).flatten()  # Nombre de mots uniques (non nuls)
+        mean_tfidf_train = np.array(self.X.mean(axis=1)).flatten()  # Moyenne des poids TF-IDF pour chaque document
 
-# Classe pour entraîner et valider le modèle Ridge Classifier avec validation croisée
-class KFoldModelTrainer:
-    def __init__(self, model, n_splits=5):
-        self.model = model
-        self.n_splits = n_splits
-        self.scores = []
+        # Calculer des caractéristiques supplémentaires pour l'ensemble de test
+        text_lengths_test = np.array(self.X_test.sum(axis=1)).flatten()
+        unique_words_test = np.array((self.X_test > 0).sum(axis=1)).flatten()
+        mean_tfidf_test = np.array(self.X_test.mean(axis=1)).flatten()
 
-    def cross_validate(self, X, y):
-        skf = StratifiedKFold(n_splits=self.n_splits)
-        fold = 1
+        # Normalisation L2
+        normalizer = Normalizer(norm='l2')
+        self.X = normalizer.fit_transform(self.X)
+        self.X_test = normalizer.transform(self.X_test)
 
-        for train_index, val_index in skf.split(X, y):
-            print(f"Training on fold {fold}...")
-            X_train, X_val = X[train_index], X[val_index]
-            y_train, y_val = y[train_index], y[val_index]
+        # Ajuster dynamiquement n_components pour TruncatedSVD
+        n_components = min(100, self.X.shape[1])  # Limiter à la dimension actuelle si < 100
+        svd = TruncatedSVD(n_components=n_components, random_state=42)
+        self.X = svd.fit_transform(self.X)
+        self.X_test = svd.transform(self.X_test)
 
-            # Entraînement du modèle sur les données d'entraînement
-            self.model.fit(X_train, y_train)
+        # Combiner les nouvelles caractéristiques avec la matrice réduite
+        self.X = np.hstack((self.X, text_lengths_train.reshape(-1, 1), unique_words_train.reshape(-1, 1), mean_tfidf_train.reshape(-1, 1)))
+        self.X_test = np.hstack((self.X_test, text_lengths_test.reshape(-1, 1), unique_words_test.reshape(-1, 1), mean_tfidf_test.reshape(-1, 1)))
 
-            # Prédictions et calcul du score F1 sur les données de validation
-            y_pred = self.model.predict(X_val)
-            score = f1_score(y_val, y_pred, average='macro')
-            self.scores.append(score)
+        print("Preprocessing complete.")
+        print(f"Processed X shape: {self.X.shape}")
+        print(f"Processed X_test shape: {self.X_test.shape}")
 
-            print(f"F1 Score for fold {fold}: {score}")
-            fold += 1
+# Fonction pour entraîner et évaluer plusieurs modèles avec validation croisée
+def evaluate_models(X, y):
+    models = {
+        'Naive Bayes': (GaussianNB(), {}),  # Utiliser GaussianNB qui supporte les valeurs négatives
+        'SVM': (LinearSVC(class_weight='balanced', max_iter=5000), {'C': [0.1, 1, 10]}),
+        'Random Forest': (RandomForestClassifier(class_weight='balanced', random_state=42), {'n_estimators': [50, 100]}),
+        'Logistic Regression': (LogisticRegression(class_weight='balanced', max_iter=5000), {'C': [0.1, 1, 10]}),
+        'Ridge Classifier': (RidgeClassifier(class_weight='balanced'), {'alpha': [0.1, 1, 10]}),
+        'MLP': (MLPClassifier(hidden_layer_sizes=(100,), max_iter=500), {'alpha': [0.0001, 0.001, 0.01]}),
+        'k-NN': (KNeighborsClassifier(), {'n_neighbors': [3, 5, 7]})
+    }
+    
+    best_model = None
+    best_score = 0
+    best_model_name = None
 
-        # Moyenne des scores sur tous les folds
-        mean_score = np.mean(self.scores)
-        print(f"\nAverage F1 Score across {self.n_splits} folds: {mean_score}")
-        return mean_score
+    for model_name, (model, param_grid) in models.items():
+        print(f"\nEvaluating {model_name}...")
+        
+        # Utiliser GridSearchCV pour trouver les meilleurs paramètres
+        grid_search = GridSearchCV(model, param_grid, scoring='f1_macro', cv=StratifiedKFold(n_splits=5))
+        grid_search.fit(X, y)
+        
+        # Enregistrer les meilleurs résultats
+        mean_score = grid_search.best_score_
+        print(f"Best F1 Score for {model_name}: {mean_score} with params {grid_search.best_params_}")
 
-    def predict(self, X):
-        """Prédictions sur les nouvelles données après validation croisée."""
-        return self.model.predict(X)
+        if mean_score > best_score:
+            best_score = mean_score
+            best_model = grid_search.best_estimator_
+            best_model_name = model_name
+
+    print(f"\nBest model: {best_model_name} with F1 Score: {best_score}")
+    return best_model, best_model_name
 
 if __name__ == "__main__":
     # Initialiser le chargeur de données
-    data_loader = DataLoader(data_folder='Kaggle')
+    data_loader = DataLoader(data_folder="Kaggle")
 
     # Charger et prétraiter les données
     data_loader.load_data()
     data_loader.preprocess_data()
 
-    # Initialiser le modèle Ridge Classifier avec balance des classes
-    ridge_model = RidgeClassifier(class_weight='balanced')
-    trainer = KFoldModelTrainer(ridge_model, n_splits=10)
+    # Entraîner et évaluer tous les modèles et sélectionner le meilleur
+    best_model, best_model_name = evaluate_models(data_loader.X, data_loader.y)
 
-    # Entraîner et valider le modèle
-    mean_f1_score = trainer.cross_validate(data_loader.X, data_loader.y)
-
-    # Prédictions finales sur l'ensemble de test
-    y_test_pred = trainer.predict(data_loader.X_test)
+    # Prédictions finales sur l'ensemble de test avec le meilleur modèle
+    y_test_pred = best_model.predict(data_loader.X_test)
 
     # Sauvegarder les prédictions dans un fichier CSV
     predictions_df = pd.DataFrame({
         'ID': np.arange(len(y_test_pred)),
         'label': y_test_pred
     })
-    predictions_df.to_csv('ridge_predictions.csv', index=False)
+    predictions_df.to_csv(f'{best_model_name.lower()}_best_predictions.csv', index=False)
 
-    print("Predictions saved to 'ridge_predictions.csv'.")
+    print(f"Predictions saved to '{best_model_name.lower()}_best_predictions.csv'.")
