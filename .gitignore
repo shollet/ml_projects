@@ -1,6 +1,8 @@
 // Kaggle files
-*.npy
-classer-le-text
+data_test.npy
+data_train.npy
+label_train.csv
+vocab_map.npy
 
 // Devoir2_Pratique files
 test*.csv
