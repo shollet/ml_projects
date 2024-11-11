@@ -1,0 +1,15 @@
+# Fichiers de données Kaggle
+data/data_test.npy
+data/data_train.npy
+data/label_train.csv
+data/vocab_map.npy
+
+# Fichiers de logs
+logs/*.log
+
+# Caches et compilations Python
+__pycache__/
+*.pyc
+
+# Configurations et caches
+.env

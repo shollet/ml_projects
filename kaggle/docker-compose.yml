@@ -1,0 +1,16 @@
+services:
+  text_classification:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./logs:/app/logs
+    container_name: kaggle_text_classification
+    command: python train.py
+    deploy:
+      resources:
+        limits:
+          memory: ${DOCKER_MEMORY:-8g}
+          cpus: ${DOCKER_CPUS:-'1.0'}
