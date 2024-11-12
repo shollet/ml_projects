@@ -1,20 +1,21 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, StackingClassifier
-from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.metrics import f1_score
-from sklearn.model_selection import KFold, RandomizedSearchCV
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from imblearn.over_sampling import SMOTE
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import StackingClassifier
 
 class DataLoader:
-    def __init__(self, data_folder, stop_words, use_pca=False, n_components=100):
+    def __init__(self, data_folder, stop_words, use_pca=False, n_components=50):
         self.data_folder = data_folder
         self.stop_words = stop_words
         self.X_train = None
@@ -26,7 +27,7 @@ class DataLoader:
         self.n_components = n_components
         self.pca = PCA(n_components=self.n_components) if use_pca else None
 
-    def load_data(self, sample_fraction=1.0):
+    def load_data(self):
         data_train_path = os.path.join(self.data_folder, 'data_train.npy')
         data_test_path = os.path.join(self.data_folder, 'data_test.npy')
         labels_train_npy_path = os.path.join(self.data_folder, 'labels_train.npy')
@@ -47,12 +48,6 @@ class DataLoader:
                 self.y_train = labels_df.iloc[:, 1].values.astype(int)
         else:
             raise FileNotFoundError("Labels file not found in the data directory.")
-        
-        # Apply sampling if sample_fraction < 1.0
-        if sample_fraction < 1.0:
-            n_samples = int(len(self.X_train) * sample_fraction)
-            self.X_train = self.X_train[:n_samples]
-            self.y_train = self.y_train[:n_samples]
 
     def preprocess_data(self):
         self.remove_stop_words()
@@ -71,10 +66,10 @@ class DataLoader:
         print(f"Stop words removed. Remaining features: {self.X_train.shape[1]}")
 
     def feature_selection(self):
-        selector = SelectKBest(chi2, k=2000)  # Reduced k for faster processing
+        selector = SelectKBest(chi2, k=1800)
         self.X_train = selector.fit_transform(self.X_train, self.y_train)
         self.X_test = selector.transform(self.X_test)
-        print(f"Feature selection with Chi2 complete. Selected features: {self.X_train.shape[1]}")
+        print(f"Feature selection complete. Selected features: {self.X_train.shape[1]}")
 
     def standardize_features(self):
         self.X_train = self.scaler.fit_transform(self.X_train)
@@ -87,14 +82,15 @@ class DataLoader:
         print(f"PCA applied. Number of components: {self.n_components}")
 
 def build_stacking_classifier():
-    rf = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
-    gb = GradientBoostingClassifier(n_estimators=50)
-    et = ExtraTreesClassifier(n_estimators=50, random_state=42)
-    xgb = XGBClassifier(eval_metric='logloss', random_state=42)
+    rf = RandomForestClassifier(class_weight='balanced', random_state=42, n_jobs=-1)
+    et = ExtraTreesClassifier(random_state=42, n_jobs=-1)
+    xgb = XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42, n_jobs=-1, learning_rate=0.07)
+    lgbm = LGBMClassifier(random_state=42, n_jobs=-1, learning_rate=0.07)
+    gb = GradientBoostingClassifier(random_state=42, learning_rate=0.05)
     lr = LogisticRegression(max_iter=1000)
 
     stacking_clf = StackingClassifier(
-        estimators=[('rf', rf), ('gb', gb), ('et', et), ('xgb', xgb)],
+        estimators=[('rf', rf), ('et', et), ('xgb', xgb), ('lgbm', lgbm), ('gb', gb)],
         final_estimator=lr,
         cv=5
     )
@@ -108,7 +104,7 @@ def build_stacking_classifier():
 
 def find_best_threshold(model, X_val, y_val):
     probabilities = model.predict_proba(X_val)[:, 1]
-    thresholds = np.linspace(0.3, 0.5, 50)
+    thresholds = np.linspace(0.4, 0.6, 101)
     f1_scores = []
 
     for threshold in thresholds:
@@ -122,17 +118,14 @@ def find_best_threshold(model, X_val, y_val):
     print(f"Best F1 Score on validation set: {f1_scores[best_idx]}")
     return best_threshold
 
-def k_fold_cross_validation(X, y, model, k=5):
-    kf = KFold(n_splits=k, shuffle=True, random_state=42)
+def k_fold_cross_validation(X, y, model, k=8):
+    skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
     val_scores = []
     thresholds = []
 
-    for train_index, val_index in kf.split(X):
+    for train_index, val_index in skf.split(X, y):
         X_train_k, X_val_k = X[train_index], X[val_index]
         y_train_k, y_val_k = y[train_index], y[val_index]
-
-        smote = SMOTE(random_state=42)
-        X_train_k, y_train_k = smote.fit_resample(X_train_k, y_train_k)
 
         model.fit(X_train_k, y_train_k)
 
@@ -151,32 +144,36 @@ def k_fold_cross_validation(X, y, model, k=5):
     return avg_threshold
 
 if __name__ == "__main__":
-    stop_words = set([
-        'the', 'and', 'is', 'in', 'to', 'of', 'a', 'for', 'on', 'with', 'as', 'by',
-        'at', 'from', 'it', 'this', 'that', 'an', 'be', 'are', 'was', 'were', 'or',
-        'which', 'but', 'not', 'can', 'has', 'have', 'had', 'will', 'would', 'should',
-        'could', 'may', 'might', 'do', 'does', 'did', 'been', 'being', 'if', 'their',
-        'they', 'them', 'we', 'our', 'us', 'you', 'your', 'he', 'she', 'him', 'her',
-        'his', 'hers', 'its', 'about', 'also', 'up', 'out', 'so', 'what', 'when', 'who',
-        'whom', 'how', 'why', 'all', 'any', 'no', 'other', 'some', 'such', 'only', 'new',
-        'more', 'most', 'over', 'after', 'before', 'between', 'into', 'than', 'these',
-        'those', 'very', 'just', 'like'
-    ])
+    stop_words = set([...])  # Ajoutez ici la liste complète des mots vides
 
-    data_loader = DataLoader(data_folder='Kaggle', stop_words=stop_words)
-    data_loader.load_data(sample_fraction=0.5)  # Load only 50% of data for faster testing
+    data_loader = DataLoader(data_folder='Kaggle', stop_words=stop_words, use_pca=True, n_components=50)
+    data_loader.load_data()
     X_train, y_train, X_test = data_loader.preprocess_data()
 
     model = build_stacking_classifier()
 
-    avg_threshold = k_fold_cross_validation(X_train, y_train, model, k=10)
+    grid_search = GridSearchCV(
+        model,
+        param_grid={
+            'classifier__rf__n_estimators': [100, 200],
+            'classifier__xgb__max_depth': [3, 5],
+            'classifier__lgbm__n_estimators': [50, 100],
+        },
+        scoring='f1_weighted',
+        cv=3,
+        n_jobs=-1
+    )
+    grid_search.fit(X_train, y_train)
+    best_model = grid_search.best_estimator_
 
-    probabilities_train = model.predict_proba(X_train)[:, 1]
+    avg_threshold = k_fold_cross_validation(X_train, y_train, best_model, k=12)
+
+    probabilities_train = best_model.predict_proba(X_train)[:, 1]
     y_train_pred = (probabilities_train >= avg_threshold).astype(int)
     train_f1 = f1_score(y_train, y_train_pred, average='weighted')
     print(f"F1 Score on Training set: {train_f1}")
 
-    probabilities_test = model.predict_proba(X_test)[:, 1]
+    probabilities_test = best_model.predict_proba(X_test)[:, 1]
     y_test_pred = (probabilities_test >= avg_threshold).astype(int)
 
     predictions_df = pd.DataFrame({
