@@ -1,0 +1,82 @@
+
+\documentclass[11pt,french,english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{ulem}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{bm}
+
+\usepackage[margin=1in]{geometry}
+
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\makeatletter
+\addto\extrasfrench{%
+   \providecommand{\og}{\leavevmode\flqq~}%
+   \providecommand{\fg}{\ifdim\lastskip>\z@\unskip\fi~\frqq}%
+}
+
+\makeatother
+
+\usepackage{etoolbox}
+\input{../../common/commands}
+\input{math_commands}
+
+
+%%%%%%%%% STUDENTS CHANGE THIS
+
+\providetoggle{undergrad}
+\settoggle{undergrad}{true}     %%% "true" if 3395 or "false" if 6390
+
+\providetoggle{french}
+\settoggle{french}{true}        %%% "true" if french or "false" if english
+
+\providetoggle{final}            
+\settoggle{final}{false}        %%% "true" for your final homework submission (removes instructions)
+
+%%%%%%%%%%%%%%%%%%%%% ^^^^^
+% \input{commands}
+
+\usepackage[colorlinks=true]{hyperref}
+
+
+
+\begin{document}
+
+\setlength{\parskip}{0.1cm} \setlength{\parindent}{0cm}
+
+\begin{center}
+\textbf{\proftitle{IFT 3395 Fondements de l'apprentissage machine \\ Prof. Ioannis Mitliagkas}{IFT 3395 Fondements de l'apprentissage machine \\ Prof. Ioannis Mitliagkas}}
+\par\end{center}{\large \par}
+
+\begin{center}
+\textbf{\LARGE{\enfr{Homework 3 - Theoretical part}{Devoir 3 - Partie Th\'eorique}}}
+\par\end{center}{\LARGE \par}
+
+
+%\guillaume{In blue below you will find solutions or partial instructions for grading. Good answers from students copies should be used to transform this into a full solution of the HW to hand out to students.}
+
+
+%\section{Theoretical Part (6 pts) \footnotesize{\textit{Partie Théorique}}}
+
+
+\input{instructions_theory}
+\begin{enumerate}
+\input{derivatives.tex}
+\input{gradient-computation.tex}
+\input{cnn.tex}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Practical Part (7 pts) \footnotesize{\textit{Partie pratique}}}
+
+% \input{homework1/practical-part.tex}
+
+
+
+
+\end{document}

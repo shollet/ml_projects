@@ -36,6 +36,17 @@ La section Kaggle contient le code nécessaire pour entraîner un modèle de ré
 - **`test.py`** : Le script principal pour charger les données, entraîner le modèle, et faire les prédictions finales.
 - Le modèle de régression logistique est entraîné à partir de zéro, avec des fonctionnalités telles que la régularisation L1/L2 (Elastic Net) et une recherche d'hyperparamètres.
 
+### Devoir 3 Partie Théorique
+La partie théorique se concentre sur les calculs de gradients et les dérivations mathématiques pour optimiser les paramètres d’un réseau de neurones. Elle couvre des concepts comme la dérivation des fonctions d'activation (sigmoïde, tangente hyperbolique, softplus, etc.), la norme L1 et L2, et les gradients pour des réseaux multicouches avec fonction de perte de type entropie croisée. Plusieurs questions bonus explorent des sujets avancés, tels que les réseaux convolutifs (CNN) et leurs configurations pour traiter les images.
+
+### Devoir 3 Partie Pratique
+La partie pratique implique la création d'une classe `Trainer` en Python avec les bibliothèques `numpy`, `matplotlib`, et `PyTorch`, pour l’entraînement de réseaux de neurones en régression univariée. Cette section inclut l'entraînement de perceptrons multicouches (MLP) et de réseaux convolutifs (CNN) en utilisant l’algorithme Adam et la descente de gradient stochastique en mini-batch. Les fonctionnalités clés à implémenter incluent :
+- Une fonction de création pour un MLP et un CNN avec la possibilité de choisir différentes fonctions d'activation (`relu`, `sigmoid`, `tanh`).
+- L'optimisation par rétropropagation pour minimiser l'erreur quadratique moyenne et calculer l'erreur absolue moyenne (MAE).
+- Une expérimentation sur le jeu de données SVHN (Street View House Numbers) pour évaluer les performances des modèles avec différentes architectures et taux d'apprentissage.
+
+Le rapport pratique contient également des analyses et des graphiques pour évaluer les effets de l'apprentissage sur différents modèles, ainsi qu'un bonus pour expérimenter sur la profondeur et la largeur des réseaux convolutifs.
+
 ## Installation
 Pour exécuter le projet, suivez les étapes ci-dessous :
 
@@ -87,12 +98,14 @@ Pour exécuter le projet, suivez les étapes ci-dessous :
 - **`Devoir 2 - Pratique - Rapport - 3395.pdf`** : Rapport pour la partie pratique du devoir.
 - **`predictions.csv`** : Résultats des prédictions sur l'ensemble de test Kaggle.
 
-## Lien Overleaf
-Le rapport théorique est disponible via le lien suivant :
-- [Lien Overleaf](https://www.overleaf.com/2667619391xcqccxpbnwcs#d6fc5c)
+## Liens Overleaf
+Les rapports théoriques sont disponibles via les liens suivant :
+- [Lien Overleaf - Devoir 2 - Partie Théorique](https://www.overleaf.com/2667619391xcqccxpbnwcs#d6fc5c)
+- [Lien Overleaf - Devoir 3 - Partie Théorique](https://www.overleaf.com/project/6733de9f465b5a844a73a964)
 
 ## Lien Kaggle
 Détails de la compétition Kaggle à venir.
+
 
 ## Contact
 Pour toute question, vous pouvez me contacter via :
