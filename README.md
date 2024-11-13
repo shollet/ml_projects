@@ -39,6 +39,8 @@ La section Kaggle contient le code nécessaire pour entraîner un modèle de ré
 ### Devoir 3 Partie Théorique
 La partie théorique se concentre sur les calculs de gradients et les dérivations mathématiques pour optimiser les paramètres d’un réseau de neurones. Elle couvre des concepts comme la dérivation des fonctions d'activation (sigmoïde, tangente hyperbolique, softplus, etc.), la norme L1 et L2, et les gradients pour des réseaux multicouches avec fonction de perte de type entropie croisée. Plusieurs questions bonus explorent des sujets avancés, tels que les réseaux convolutifs (CNN) et leurs configurations pour traiter les images.
 
+- [Lien Overleaf - Devoir 3 - Partie Théorique](https://www.overleaf.com/project/6733de9f465b5a844a73a964)
+
 ### Devoir 3 Partie Pratique
 La partie pratique implique la création d'une classe `Trainer` en Python avec les bibliothèques `numpy`, `matplotlib`, et `PyTorch`, pour l’entraînement de réseaux de neurones en régression univariée. Cette section inclut l'entraînement de perceptrons multicouches (MLP) et de réseaux convolutifs (CNN) en utilisant l’algorithme Adam et la descente de gradient stochastique en mini-batch. Les fonctionnalités clés à implémenter incluent :
 - Une fonction de création pour un MLP et un CNN avec la possibilité de choisir différentes fonctions d'activation (`relu`, `sigmoid`, `tanh`).
