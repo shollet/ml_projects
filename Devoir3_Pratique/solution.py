@@ -157,8 +157,30 @@ class Trainer:
             raise ValueError(f"Fonction d'activation '{activation_str}' non supportée. Utilisez 'relu', 'tanh' ou 'sigmoid'.")
 
     def compute_loss_and_mae(self, X: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        # TODO WRITE CODE HERE
-        pass
+        """
+        Calcule la loss (MSE) et l'erreur absolue moyenne (MAE) pour une batch donnée.
+
+        Args:
+            X: Batch d'entrées (images) de forme (batch_size, C, H, W)
+            y: Batch de labels (valeurs cibles) de forme (batch_size,)
+
+        Returns:
+            Tuple contenant la loss (MSE) et la MAE, tous deux en tant que torch.Tensor avec gradient.
+        """
+        # 1. Forward pass pour obtenir les prédictions
+        y_pred = self.network(X)  # y_pred de forme (batch_size, 1)
+
+        # 2. S'assurer que y a la bonne forme
+        y = y.view_as(y_pred)  # Reshape y pour qu'il ait la même forme que y_pred
+
+        # 3. Calculer la loss (MSE)
+        loss = torch.nn.functional.mse_loss(y_pred, y, reduction='mean')
+
+        # 4. Calculer la MAE
+        mae = torch.nn.functional.l1_loss(y_pred, y, reduction='mean')
+
+        # 5. Retourner le tuple (loss, mae)
+        return loss, mae
 
     def training_step(self, X_batch: torch.Tensor, y_batch: torch.Tensor):
         # TODO WRITE CODE HERE
